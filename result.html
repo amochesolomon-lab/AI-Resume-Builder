@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Rewritten Résumé</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="hero">
+  <h1 class="title">Your Rewritten Résumé</h1>
+</header>
+
+<main>
+  <div class="glass result-glass">
+    <div class="box-actions">
+      <button id="copyBtn" class="action-btn">Copy</button>
+      <button id="rewriteBtn" class="action-btn secondary">Rewrite</button>
+    </div>
+
+    <pre id="resultOutput" aria-live="polite"></pre>
+  </div>
+</main>
+
+<!-- shared effects + helpers -->
+<script src="script.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const data = JSON.parse(localStorage.getItem('resumeData') || 'null');
+  const outputEl = document.getElementById('resultOutput');
+  const copyBtn = document.getElementById('copyBtn');
+  const rewriteBtn = document.getElementById('rewriteBtn');
+  let versions = JSON.parse(localStorage.getItem('rewrittenVersions') || '[]');
+
+  function setText(text) {
+    outputEl.textContent = text;
+  }
+
+  function showOriginal() {
+    if (data && data.resume) {
+      setText('Original resume (preview)\n\n' + data.resume);
+    } else if (data) {
+      setText(JSON.stringify(data, null, 2));
+    } else {
+      setText('No resume data found. Go back and paste your résumé first.');
+    }
+  }
+
+  async function callRewriteAPI(payload) {
+    // optional backend; keep timeout-friendly and tolerant
+    try {
+      const resp = await fetch('/api/rewrite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (!resp.ok) throw new Error('API ' + resp.status);
+      const ct = resp.headers.get('content-type') || '';
+      if (ct.includes('application/json')) {
+        const json = await resp.json();
+        return json.rewritten || json.text || JSON.stringify(json);
+      }
+      return await resp.text();
+    } catch (err) {
+      // bubble up so caller can fallback
+      throw err;
+    }
+  }
+
+  function localSimulatedRewrite(payload, attempt = 1) {
+    const text = (payload && payload.resume) ? payload.resume : JSON.stringify(payload || {}, null, 2);
+    const sentences = text.split(/(?<=[\.\!\?])\s+/).filter(Boolean);
+    for (let i = sentences.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [sentences[i], sentences[j]] = [sentences[j], sentences[i]];
+    }
+    const body = sentences.join(' ');
+    return `Alternative version (${attempt}) — simulated\n\n${body}`;
+  }
+
+  async function generateRewrite() {
+    if (!data) {
+      setText('No resume data found. Go back and paste your résumé first.');
+      rewriteBtn.disabled = true;
+      copyBtn.disabled = true;
+      return;
+    }
+
+    // show original while we compute
+    showOriginal();
+
+    rewriteBtn.disabled = true;
+    copyBtn.disabled = true;
+    const attempt = versions.length + 1;
+    rewriteBtn.textContent = 'Rewriting...';
+    console.log('generateRewrite: attempt', attempt);
+
+    try {
+      let newText;
+      try {
+        newText = await callRewriteAPI(data);
+      } catch (apiErr) {
+        console.warn('API rewrite failed, using local fallback', apiErr);
+        newText = localSimulatedRewrite(data, attempt);
+      }
+
+      versions.push({ text: newText, created: Date.now() });
+      localStorage.setItem('rewrittenVersions', JSON.stringify(versions));
+      setText(newText);
+    } catch (err) {
+      console.error('Rewrite failed', err);
+      setText('Rewrite failed. Try again or check your network.');
+    } finally {
+      rewriteBtn.disabled = false;
+      copyBtn.disabled = false;
+      rewriteBtn.textContent = 'Rewrite';
+    }
+  }
+
+  // initialize display: show last version or original and start an initial rewrite
+  if (versions.length > 0) {
+    setText(versions[versions.length - 1].text);
+  } else {
+    showOriginal();
+    // generate initial rewrite but don't block UI
+    generateRewrite().catch((e) => console.warn('Initial rewrite failed', e));
+  }
+
+  copyBtn.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(outputEl.textContent);
+      copyBtn.textContent = 'Copied!';
+      setTimeout(() => copyBtn.textContent = 'Copy', 1500);
+    } catch (err) {
+      // fallback selection copy
+      const range = document.createRange();
+      range.selectNodeContents(outputEl);
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+      document.execCommand('copy');
+      sel.removeAllRanges();
+      copyBtn.textContent = 'Copied!';
+      setTimeout(() => copyBtn.textContent = 'Copy', 1500);
+    }
+  });
+
+  rewriteBtn.addEventListener('click', () => { generateRewrite(); });
+});
+</script>
+
+
+
+

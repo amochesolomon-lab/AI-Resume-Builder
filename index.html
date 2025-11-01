@@ -1,61 +1,42 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>AI Resume Builder</title>
-
-    <link
-    href="https://fonts.googleapis.com/css2?family=inter:wght@300;400;600;700&
-    family=Poppins:wght@600;700&display=swap"
-
-    rel="stylesheet">
-    <link rel="stylesheet" href="style.css"
-
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Resume Rewriter</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
-
 <body>
 
-    <section class="hero">
-<div class="hero-content">
-<h1>Build Your Future Resume</h1>
-<p>Generate a smart, professional resume powered by AI. Fast. Futuristic. Free.</p>
-<button id="startBtn" class="hero-btn">Start Building</button>
+<header class="hero">
+  <div class="glow-orb"></div>
+  <h1 class="title">AI Résumé Rewriter</h1>
+  <p class="subtitle">Transform your résumé into a powerful, modern, ATS-optimized version.</p>
+</header>
+
+<section class="form-section">
+  
+  <div class="left-box glass">
+    <h3>Personal Info</h3>
+
+    <input id="nameInput" placeholder="Full Name" />
+    <input id="titleInput" placeholder="Professional Title" />
+    <input id="emailInput" placeholder="Email" />
+
+    <textarea id="skillsInput" placeholder="List your key skills..."></textarea>
+  </div>
+
+  <div class="right-box glass">
+    <h3>Paste your résumé</h3>
+    <textarea id="resumeInput" class="resume-text" placeholder="Paste your résumé here..."></textarea>
+  </div>
+
+</section>
+
+<div class="btn-wrapper">
+  <button id="rewriteBtn" class="glow-btn">Rewrite with AI</button>
 </div>
 
-    <div class="lights" aria hidden>
-        <div class="lights l1"></div>
-        <div class="lights l2"></div>
-    </div>
-
-    <div class="container">
-
-        <div class="card">
-            <header class="brand">
-                <div class="logo">SD</div>
-                <div>
-                    <h1>AI Resume Builder</h1>
-                    <p class="lead">Generate ATS-friendly resumes in seconds.</p>
-                </div>
-            </header>
-
-            <form id="resumeForm"
-            autocomplete="off">
-        <div class="row">
-            <div class="flex:1">
-                <label for="fullname">
-                    Full name
-                </label>
-                <input id="fullName"
-                name="fullName" type="text"
-                placeholder="Your Name"
-
-            </div>
-        </div> 
-    </form>
-        </div>
-    </div>
+<script src="script.js"></script>
 </body>
-
 </html>
