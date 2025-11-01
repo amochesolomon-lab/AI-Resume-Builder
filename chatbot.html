@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Chat — AI Résumé Rewriter</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    /* Chat-specific styles built to match the site look */
+    .chat-wrapper { max-width: 1000px; margin: 36px auto; padding: 0 18px; }
+    .chat-box { display:flex; flex-direction:column; gap:12px; }
+    .messages { background: rgba(255,255,255,0.03); border-radius:12px; padding:18px; min-height:360px; max-height:60vh; overflow:auto; }
+    .message { display:block; max-width:78%; padding:12px 14px; margin:8px 0; border-radius:12px; line-height:1.3; }
+    .message.user { margin-left:auto; background: linear-gradient(90deg,#7a5cff,#00d4ff); color:#fff; box-shadow:0 6px 18px rgba(122,92,255,0.12); }
+    .message.bot { margin-right:auto; background: rgba(255,255,255,0.06); color:#fff; border:1px solid rgba(255,255,255,0.04); }
+    .chat-input { display:flex; gap:12px; align-items:stretch; }
+    .chat-input textarea { resize: vertical; min-height:48px; max-height:140px; padding:12px; border-radius:10px; }
+    .chat-controls { display:flex; gap:8px; align-items:center; }
+    .meta { font-size:0.85rem; opacity:0.75; }
+    /* ensure chat area sits above effects layer */
+    .chat-wrapper, .messages { position: relative; z-index: 1; }
+  </style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="glow-orb"></div>
+  <h1 class="title">Chat with Resume AI</h1>
+  <p class="subtitle">Ask the assistant about formatting, phrasing, or request a rewrite.</p>
+</header>
+
+<div class="chat-wrapper">
+  <div class="glass chat-box">
+    <div class="box-actions">
+      <div class="meta">Conversation</div>
+      <div style="margin-left:auto;display:flex;gap:8px;">
+        <button id="clearBtn" class="action-btn secondary">Clear</button>
+        <a href="index.html" class="action-btn">Editor</a>
+      </div>
+    </div>
+
+    <div id="messages" class="messages" aria-live="polite" aria-atomic="false"></div>
+
+    <div class="chat-input">
+      <textarea id="chatInput" placeholder="Write a question or paste a section of your résumé..." aria-label="Message"></textarea>
+      <div class="chat-controls">
+        <button id="sendBtn" class="glow-btn">Send</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="script.js"></script>
+
+<script>
+// Chatroom logic: local-storage backed, simulated bot fallback, placeholder API hook
+document.addEventListener('DOMContentLoaded', () => {
+  const messagesEl = document.getElementById('messages');
+  const inputEl = document.getElementById('chatInput');
+  const sendBtn = document.getElementById('sendBtn');
+  const clearBtn = document.getElementById('clearBtn');
+
+  function loadHistory() {
+    try { return JSON.parse(localStorage.getItem('chatHistory') || '[]'); } catch(e){return []}
+  }
+
+  function saveHistory(h) { try { localStorage.setItem('chatHistory', JSON.stringify(h)); } catch(e){} }
+
+  function renderMessage(item) {
+    const el = document.createElement('div');
+    el.className = 'message ' + (item.role === 'user' ? 'user' : 'bot');
+    el.textContent = item.text;
+    messagesEl.appendChild(el);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
+
+  function renderAll() {
+    messagesEl.innerHTML = '';
+    const history = loadHistory();
+    history.forEach(renderMessage);
+  }
+
+  async function sendMessage(text) {
+    if (!text.trim()) return;
+    const history = loadHistory();
+    const userMsg = { role:'user', text: text.trim(), created: Date.now() };
+    history.push(userMsg);
+    saveHistory(history);
+    renderMessage(userMsg);
+    inputEl.value = '';
+
+    // show a small typing indicator
+    const typingEl = document.createElement('div');
+    typingEl.className = 'message bot';
+    typingEl.textContent = 'Assistant is typing…';
+    messagesEl.appendChild(typingEl);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+
+    try {
+      // try calling a backend API if present
+      const resp = await fetch('/api/chat', { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ message: text }) });
+      let botText;
+      if (resp.ok) {
+        const ct = resp.headers.get('content-type') || '';
+        if (ct.includes('application/json')) {
+          const json = await resp.json();
+          botText = json.reply || json.text || JSON.stringify(json);
+        } else {
+          botText = await resp.text();
+        }
+      } else {
+        throw new Error('API ' + resp.status);
+      }
+
+      // replace typing indicator with real reply
+      typingEl.remove();
+      const botMsg = { role: 'bot', text: botText, created: Date.now() };
+      history.push(botMsg);
+      saveHistory(history);
+      renderMessage(botMsg);
+    } catch (err) {
+      // fallback simulated reply
+      typingEl.textContent = '';
+      const fallback = simulateBotReply(text);
+      typingEl.remove();
+      const botMsg = { role: 'bot', text: fallback, created: Date.now() };
+      history.push(botMsg);
+      saveHistory(history);
+      renderMessage(botMsg);
+    }
+  }
+
+  function simulateBotReply(userText){
+    // Simple, friendly fallback: offer suggestions and show short rewrite example
+    const snippet = userText.split('\n').slice(0,3).join(' ');
+    return `Suggestion: Try using active verbs and quantifying achievements.\n\nExample rewrite (short):\n${snippet}\n→ Improved: ${snippet} (improved phrasing)`;
+  }
+
+  sendBtn.addEventListener('click', () => sendMessage(inputEl.value));
+  inputEl.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(inputEl.value); } });
+
+  clearBtn.addEventListener('click', () => { if (confirm('Clear conversation?')){ localStorage.removeItem('chatHistory'); renderAll(); } });
+
+  renderAll();
+});
+</script>
+
+</body>
+</html>

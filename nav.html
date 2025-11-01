@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Navigation — AI Résumé Rewriter</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .nav-grid { display:flex; gap:24px; max-width:1100px; margin:40px auto; padding:0 18px; }
+    .preview { flex:1; background: rgba(255,255,255,0.03); border-radius:12px; padding:18px; display:flex; flex-direction:column; align-items:center; gap:12px; }
+    .preview h3 { margin:0; }
+    .preview img { width:100%; max-width:420px; border-radius:10px; box-shadow:0 12px 30px rgba(0,0,0,0.5); transform-origin:center; }
+    .preview p { opacity:0.9; text-align:center; }
+    .nav-actions { display:flex; gap:10px; margin-top:8px; }
+    .nav-btn { padding:10px 18px; border-radius:12px; border:none; cursor:pointer; font-weight:600; }
+
+    .float-slow { animation: floaty 6s ease-in-out infinite; }
+    @keyframes floaty { 0% { transform: translateY(0) rotate(-0.2deg); } 50% { transform: translateY(-12px) rotate(0.6deg); } 100% { transform: translateY(0) rotate(-0.2deg); } }
+
+    .bounce-slow { animation: bounce 3.2s ease-in-out infinite; }
+    @keyframes bounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+
+    .page-enter { animation: pageFadeIn 420ms ease forwards; }
+    @keyframes pageFadeIn { from { opacity:0; transform: translateY(6px); } to { opacity:1; transform: translateY(0); } }
+    @media(max-width:900px){ .nav-grid { flex-direction:column; } .preview img{ max-width:100%; } }
+  </style>
+</head>
+<body class="page-enter">
+<header class="hero">
+  <div class="glow-orb"></div>
+  <h1 class="title">Welcome back</h1>
+  <p class="subtitle">Choose where you'd like to go next</p>
+</header>
+
+<main>
+  <div class="nav-grid">
+    <section class="preview glass">
+      <h3>Résumé Rewriter</h3>
+      <img src="assets/Screenshot 2025-11-01 083216.png" alt="Résumé preview" class="float-slow">
+      <p>Open the editor to paste your résumé and job description. The AI rewrites and optimizes content for clarity and ATS.</p>
+      <div class="nav-actions">
+  <a href="index.html?from=nav" class="nav-btn glow-btn bounce-slow">-></a>
+      </div>
+    </section>
+
+    <section class="preview glass">
+      <h3>Chat with Assistant</h3>
+      <img src="assets/Screenshot 2025-11-01 083033.png" alt="Chat preview" class="float-slow">
+      <p>Ask the assistant quick questions, request phrasing suggestions, or paste short sections for inline feedback.</p>
+      <div class="nav-actions">
+  <a href="chatbot.html" class="nav-btn action-btn bounce-slow">-></a>
+      </div>
+    </section>
+  </div>
+</main>
+
+<script>
+// intercept links to add a tiny transition delay for smooth navigation
+document.addEventListener('click', (e) => {
+  const a = e.target.closest('a');
+  if (!a) return;
+  const href = a.getAttribute('href');
+  if (!href || href.startsWith('#') || href.startsWith('http')) return;
+  e.preventDefault();
+  document.body.style.opacity = '0';
+  setTimeout(() => { window.location.href = href; }, 240);
+});
+</script>
+
+</body>
+</html>
